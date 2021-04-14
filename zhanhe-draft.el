@@ -77,25 +77,15 @@
          (draft-root "/Users/zhanhe/Documents/Draft/")
          (check-files (directory-files-recursively draft-root "org"))
          (tags '())
-         sorted-tags
          )
-    ;; list all org files.
-    ;; find all tags in files.
-    ;; two types of tag.
-    ;;    1) split with :untouch:tag:
-    ;;    2) after #+TAGS: split with space.
-    ;; give them to helm-to-select
+    ;; Check line starts with #+TAGS: .
     (dolist (orgfile check-files)
       (setq tags (vconcat tags (extract-tag-from-file orgfile))))
-    ;; (setq sorted-tags (cl-sort
-    ;;  (cl-delete-duplicates tags :test 'string-equal)
-    ;;  'string-lessp
-    ;;  :key 'downcase
-    ;;  ))
     (setq tags (cl-sort
                 (count-seq-same-item tags)
                 'string-lessp
-                :key (lambda (x) (nth 0 x))))))
+                :key (lambda (x) (nth 0 x)
+                       )))))
 
 
 
@@ -109,7 +99,9 @@
           (mapcar (lambda (x) (format "%-15s\t\t[%d]" (nth 0 x) (nth 1 x)))
                   (append (list-draft-tags) nil))
           :action '(
-                      ("Insert" . insert)
+                    ("Insert" . (lambda (candidate)
+                                  (insert
+                                   (nth 0 (split-string candidate " " t " ")))))
                       )
           )))
 ;; (map!
