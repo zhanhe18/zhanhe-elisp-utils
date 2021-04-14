@@ -53,11 +53,8 @@
       )
     tags))
 
-
-;;;###autoload
 (defun list-draft-tags ()
-  "List Tags under draft-root"
-  (interactive)
+  "List Tags under draft-root."
   (let* (
          (draft-root "/Users/zhanhe/Documents/Draft/")
          (check-files (directory-files-recursively draft-root "org"))
@@ -76,19 +73,19 @@
      'string-lessp
      :key 'downcase
      ))
-    (helm :sources
-          (helm-build-sync-source "Note Tags"
-            :candidates (append tags nil)
-            :action '(
+    tags))
+
+;;;###autoload
+(defun show-draft-tags()
+  "Show draft tags."
+  (interactive)
+  (helm :sources
+        (helm-build-sync-source "Note Tags"
+          :candidates (append (list-draft-tags) nil)
+          :action '(
                       ("Insert" . insert)
                       )
-            )
-          :buffer "*org tags*")
-     ))
-
-
-(list-draft-tags)
-
+          )))
 ;; (map!
 ;;  "C-c d" 'create-draft)
 
