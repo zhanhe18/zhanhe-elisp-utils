@@ -19,6 +19,9 @@
 ;;
 ;;; Code:
 
+(require 'buffer-utils)
+(require 'string-utils)
+(require 'helm)
 
 ;;;###autoload
 (defun create-draft(title)
@@ -35,8 +38,59 @@
                 (file-name-as-directory dest-save-folder)
                 (format "%s-%s.org" title time-now)))))
 
-(map!
- "C-c d" 'create-draft)
+(defun extract-tag-from-file (filePath)
+  (let*
+      (
+       (file-content (split-string (get-string-from-file filePath) "\n" t))
+       (tags '())
+       index
+       )
+    (dolist (line file-content)
+      (setq index (cl-search "#+TAGS:" line))
+      (when index
+        (setq tags (vconcat tags (split-string (substring line (+ index 7)) " " t " ")))
+        )
+      )
+    tags))
+
+
+;;;###autoload
+(defun list-draft-tags ()
+  "List Tags under draft-root"
+  (interactive)
+  (let* (
+         (draft-root "/Users/zhanhe/Documents/Draft/")
+         (check-files (directory-files-recursively draft-root "org"))
+         (tags '())
+         )
+    ;; list all org files.
+    ;; find all tags in files.
+    ;; two types of tag.
+    ;;    1) split with :untouch:tag:
+    ;;    2) after #+TAGS: split with space.
+    ;; give them to helm-to-select
+    (dolist (orgfile check-files)
+      (setq tags (vconcat tags (extract-tag-from-file orgfile))))
+    (setq tags (cl-sort
+     (cl-delete-duplicates tags :test 'string-equal)
+     'string-lessp
+     :key 'downcase
+     ))
+    (helm :sources
+          (helm-build-sync-source "Note Tags"
+            :candidates (append tags nil)
+            :action '(
+                      ("Insert" . insert)
+                      )
+            )
+          :buffer "*org tags*")
+     ))
+
+
+(list-draft-tags)
+
+;; (map!
+;;  "C-c d" 'create-draft)
 
 (provide 'zhanhe-draft)
 ;;; zhanhe-draft.el ends here
