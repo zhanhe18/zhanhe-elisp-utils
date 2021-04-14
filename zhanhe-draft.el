@@ -53,12 +53,31 @@
       )
     tags))
 
+
+(defun count-seq-same-item (seq)
+  "Count same items and return pair (\"abc\" 1))."
+  (let*
+      ((retlist '())
+       )
+    (while (not (seq-empty-p seq))
+      (setq ele (seq-elt seq 0))
+      (message "%s" ele)
+      (setq retlist
+            (push
+             (list ele (seq-count
+                        (lambda (x) (string-equal x ele))
+                        seq)) retlist))
+      (setq seq (seq-remove (lambda (x) (string-equal x ele)) seq)))
+    retlist))
+
+
 (defun list-draft-tags ()
   "List Tags under draft-root."
   (let* (
          (draft-root "/Users/zhanhe/Documents/Draft/")
          (check-files (directory-files-recursively draft-root "org"))
          (tags '())
+         sorted-tags
          )
     ;; list all org files.
     ;; find all tags in files.
@@ -68,12 +87,17 @@
     ;; give them to helm-to-select
     (dolist (orgfile check-files)
       (setq tags (vconcat tags (extract-tag-from-file orgfile))))
+    ;; (setq sorted-tags (cl-sort
+    ;;  (cl-delete-duplicates tags :test 'string-equal)
+    ;;  'string-lessp
+    ;;  :key 'downcase
+    ;;  ))
     (setq tags (cl-sort
-     (cl-delete-duplicates tags :test 'string-equal)
-     'string-lessp
-     :key 'downcase
-     ))
-    tags))
+                (count-seq-same-item tags)
+                'string-lessp
+                :key (lambda (x) (nth 0 x))))))
+
+
 
 ;;;###autoload
 (defun show-draft-tags()
@@ -81,7 +105,9 @@
   (interactive)
   (helm :sources
         (helm-build-sync-source "Note Tags"
-          :candidates (append (list-draft-tags) nil)
+          :candidates
+          (mapcar (lambda (x) (format "%-15s\t\t[%d]" (nth 0 x) (nth 1 x)))
+                  (append (list-draft-tags) nil))
           :action '(
                       ("Insert" . insert)
                       )
